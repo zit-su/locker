@@ -2,8 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>P2P Secure Chat</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure P2P Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body {
@@ -49,16 +49,17 @@ button { background:#03dac6; font-weight:bold; }
 
 <div id="join">
   <input id="name" placeholder="Your name">
-  <input id="room" placeholder="Room name">
   <input id="pass" type="password" placeholder="Room password">
-  <button onclick="start()">Join / Create</button>
+  <button onclick="createRoom()">Create Chat</button>
+  <hr>
+  <input id="roomId" placeholder="Room ID from link">
+  <button onclick="joinRoom()">Join Chat</button>
 </div>
 
 <div id="chat">
   <div id="msgs"></div>
   <input id="text" placeholder="Message">
   <button onclick="send()">Send</button>
-  <button onclick="copy()">Copy Chat Link</button>
 </div>
 
 </div>
@@ -67,43 +68,59 @@ button { background:#03dac6; font-weight:bold; }
 
 <script>
 let peer, conn;
-let username, roomId, password;
+let username, password;
 
 const params = new URLSearchParams(location.search);
 if (params.get("room")) {
-  document.getElementById("room").value = params.get("room");
+  roomId.value = params.get("room");
 }
 
-function start() {
+function createRoom() {
   username = name.value.trim();
-  roomId = room.value.trim();
   password = pass.value;
 
-  if (!username || !roomId || !password) {
-    alert("Fill all fields");
+  if (!username || !password) {
+    alert("Fill name & password");
     return;
   }
 
-  peer = new Peer(roomId, { debug: 1 });
+  peer = new Peer();
 
   peer.on("open", id => {
     showChat();
+    alert("Share this Room ID:\n" + id);
+
+    history.replaceState(null,"","?room="+id);
   });
 
   peer.on("connection", c => {
     conn = c;
     conn.on("data", receive);
   });
+}
 
-  if (params.get("join") === "1") {
-    peer.on("open", () => {
-      conn = peer.connect(roomId);
-      conn.on("data", receive);
-      conn.on("open", () => {
-        conn.send({ type:"auth", pass: password, user: username });
-      });
-    });
+function joinRoom() {
+  username = name.value.trim();
+  password = pass.value;
+  const id = roomId.value.trim();
+
+  if (!username || !password || !id) {
+    alert("Fill all fields");
+    return;
   }
+
+  peer = new Peer();
+
+  peer.on("open", () => {
+    conn = peer.connect(id);
+
+    conn.on("open", () => {
+      conn.send({ type:"auth", pass:password, user:username });
+    });
+
+    conn.on("data", receive);
+    showChat();
+  });
 }
 
 function receive(data) {
@@ -122,29 +139,23 @@ function receive(data) {
 }
 
 function send() {
+  if (!conn) return;
   const t = text.value;
-  if (!t || !conn) return;
+  if (!t) return;
 
   conn.send({ type:"msg", user:username, text:t });
   add("Me", t);
   text.value = "";
 }
 
-function add(u, t) {
+function add(u,t) {
   msgs.innerHTML += `<div class="msg"><b>${u}:</b> ${t}</div>`;
   msgs.scrollTop = msgs.scrollHeight;
 }
 
 function showChat() {
-  join.style.display = "none";
-  chat.style.display = "block";
-}
-
-function copy() {
-  const link = location.origin + location.pathname +
-    "?room=" + roomId + "&join=1";
-  navigator.clipboard.writeText(link);
-  alert("Chat link copied");
+  join.style.display="none";
+  chat.style.display="block";
 }
 </script>
 
