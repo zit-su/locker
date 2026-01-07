@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Chat App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 85vh;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chat-header {
+            background: linear-gradient(to right, #4776E6, #8E54E9);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .chat-body {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8f9fa;
+        }
+        
+        .message {
+            max-width: 70%;
+            padding: 12px 18px;
+            margin-bottom: 15px;
+            border-radius: 20px;
+            line-height: 1.5;
+            position: relative;
+            word-wrap: break-word;
+        }
+        
+        .received {
+            align-self: flex-start;
+            background-color: #e9ecef;
+            color: #333;
+            border-top-left-radius: 5px;
+        }
+        
+        .sent {
+            align-self: flex-end;
+            background: linear-gradient(to right, #4776E6, #8E54E9);
+            color: white;
+            border-top-right-radius: 5px;
+        }
+        
+        .message-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        
+        .chat-footer {
+            padding: 20px 30px;
+            background-color: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 50px;
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.3s;
+        }
+        
+        .message-input:focus {
+            border-color: #8E54E9;
+        }
+        
+        .send-btn {
+            background: linear-gradient(to right, #4776E6, #8E54E9);
+            color: white;
+            border: none;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(142, 84, 233, 0.4);
+        }
+        
+        .user-setup {
+            padding: 30px;
+            text-align: center;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .user-setup h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .username-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border 0.3s;
+        }
+        
+        .username-input:focus {
+            border-color: #8E54E9;
+        }
+        
+        .start-btn {
+            background: linear-gradient(to right, #4776E6, #8E54E9);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-self: flex-start;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background-color: #e9ecef;
+            border-radius: 20px;
+            width: auto;
+            max-width: 100px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #888;
+            margin-right: 5px;
+            animation: typing 1.5s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+            margin-right: 0;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        .user-count {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .timestamp {
+            font-size: 0.7rem;
+        }
+        
+        .chat-info {
+            text-align: center;
+            color: #666;
+            padding: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 95vh;
+                border-radius: 10px;
+            }
+            
+            .message {
+                max-width: 85%;
+            }
+            
+            .chat-header h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="user-setup" id="userSetup">
+        <h2>Welcome to Real-Time Chat</h2>
+        <p>Enter your username to start chatting</p>
+        <input type="text" class="username-input" id="usernameInput" placeholder="Your username" maxlength="20">
+        <button class="start-btn" id="startChatBtn">Start Chatting</button>
+        <div class="chat-info" style="margin-top: 20px;">
+            <p><i class="fas fa-info-circle"></i> This chat simulates real-time functionality using browser storage. Messages are saved locally.</p>
+        </div>
+    </div>
+    
+    <div class="chat-container hidden" id="chatContainer">
+        <div class="chat-header">
+            <div>
+                <h1><i class="fas fa-comments"></i> Real-Time Chat</h1>
+                <p>Connected as: <strong id="currentUser"></strong></p>
+            </div>
+            <div class="status">
+                <div class="status-dot"></div>
+                <span>Online</span>
+                <div class="user-count">
+                    <i class="fas fa-users"></i> <span id="userCount">1</span> online
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-body" id="chatBody">
+            <div class="chat-info">
+                <p>Welcome to the chat! Messages are stored locally in your browser. Start by saying hello!</p>
+            </div>
+            <!-- Messages will be inserted here by JavaScript -->
+        </div>
+        
+        <div class="chat-footer">
+            <input type="text" class="message-input" id="messageInput" placeholder="Type your message here..." maxlength="500">
+            <button class="send-btn" id="sendMessageBtn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const userSetup = document.getElementById('userSetup');
+        const chatContainer = document.getElementById('chatContainer');
+        const usernameInput = document.getElementById('usernameInput');
+        const startChatBtn = document.getElementById('startChatBtn');
+        const currentUserElement = document.getElementById('currentUser');
+        const chatBody = document.getElementById('chatBody');
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageBtn = document.getElementById('sendMessageBtn');
+        const userCountElement = document.getElementById('userCount');
+        
+        // Chat state
+        let currentUser = '';
+        let messageHistory = [];
+        let typingTimeout = null;
+        let simulatedUserInterval = null;
+        
+        // Initialize the app
+        function initApp() {
+            // Check if user already exists in localStorage
+            const savedUser = localStorage.getItem('chatUsername');
+            if (savedUser) {
+                usernameInput.value = savedUser;
+            }
+            
+            // Load message history
+            loadMessages();
+            
+            // Set up event listeners
+            startChatBtn.addEventListener('click', startChat);
+            usernameInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') startChat();
+            });
+            
+            sendMessageBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            // Simulate real-time updates
+            setInterval(checkForNewMessages, 1000);
+            
+            // Start simulated user for demo purposes
+            startSimulatedUser();
+            
+            // Update user count
+            updateUserCount();
+        }
+        
+        // Start chat with entered username
+        function startChat() {
+            const username = usernameInput.value.trim();
+            if (!username) {
+                alert('Please enter a username');
+                return;
+            }
+            
+            currentUser = username;
+            currentUserElement.textContent = currentUser;
+            
+            // Save username to localStorage
+            localStorage.setItem('chatUsername', username);
+            
+            // Switch to chat interface
+            userSetup.classList.add('hidden');
+            chatContainer.classList.remove('hidden');
+            
+            // Add welcome message
+            addSystemMessage(`Welcome to the chat, ${currentUser}!`);
+            
+            // Focus on message input
+            messageInput.focus();
+        }
+        
+        // Send a message
+        function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (!messageText) return;
+            
+            // Create message object
+            const message = {
+                id: Date.now(),
+                user: currentUser,
+                text: messageText,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                type: 'sent'
+            };
+            
+            // Add to UI
+            addMessageToUI(message);
+            
+            // Save to localStorage
+            saveMessage(message);
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Simulate a response after a short delay
+            simulateResponse(messageText);
+        }
+        
+        // Add a message to the UI
+        function addMessageToUI(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${message.type}`;
+            messageElement.id = `msg-${message.id}`;
+            
+            messageElement.innerHTML = `
+                <div class="message-text">${escapeHtml(message.text)}</div>
+                <div class="message-info">
+                    <span class="sender">${message.type === 'sent' ? 'You' : escapeHtml(message.user)}</span>
+                    <span class="timestamp">${message.time}</span>
+                </div>
+            `;
+            
+            chatBody.appendChild(messageElement);
+            
+            // Scroll to bottom
+            chatBody.scrollTop = chatBody.scrollHeight;
+            
+            // Add typing indicator removal if needed
+            removeTypingIndicator();
+        }
+        
+        // Add a system message
+        function addSystemMessage(text) {
+            const message = {
+                id: Date.now(),
+                user: 'System',
+                text: text,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                type: 'received'
+            };
+            
+            addMessageToUI(message);
+            saveMessage(message);
+        }
+        
+        // Save message to localStorage
+        function saveMessage(message) {
+            // Get existing messages
+            const messages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+            
+            // Add new message
+            messages.push(message);
+            
+            // Keep only last 100 messages to avoid storage issues
+            if (messages.length > 100) {
+                messages.splice(0, messages.length - 100);
+            }
+            
+            // Save back to localStorage
+            localStorage.setItem('chatMessages', JSON.stringify(messages));
+        }
+        
+        // Load messages from localStorage
+        function loadMessages() {
+            const messages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+            messageHistory = messages;
+            
+            // Add to UI
+            messages.forEach(message => {
+                // Only add if the element doesn't already exist
+                if (!document.getElementById(`msg-${message.id}`)) {
+                    addMessageToUI(message);
+                }
+            });
+        }
+        
+        // Check for new messages (simulates real-time updates)
+        function checkForNewMessages() {
+            const savedMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+            
+            // Check if there are new messages
+            if (savedMessages.length > messageHistory.length) {
+                // Find the new messages
+                const newMessages = savedMessages.slice(messageHistory.length);
+                
+                // Add each new message to UI
+                newMessages.forEach(message => {
+                    // Don't show user's own messages again
+                    if (message.user !== currentUser || message.type !== 'sent') {
+                        // Update message type for received messages
+                        if (message.user === currentUser) {
+                            message.type = 'sent';
+                        } else {
+                            message.type = 'received';
+                        }
+                        
+                        // Add to UI if not already there
+                        if (!document.getElementById(`msg-${message.id}`)) {
+                            addMessageToUI(message);
+                        }
+                    }
+                });
+                
+                // Update message history
+                messageHistory = savedMessages;
+            }
+            
+            // Update user count periodically
+            if (Math.random() < 0.1) { // 10% chance each check
+                updateUserCount();
+            }
+        }
+        
+        // Update online user count
+        function updateUserCount() {
+            // Simulate random user count between 1 and 10
+            const count = Math.floor(Math.random() * 10) + 1;
+            userCountElement.textContent = count;
+        }
+        
+        // Start a simulated user for demo purposes
+        function startSimulatedUser() {
+            const botUsers = ['Alex', 'Jordan', 'Taylor', 'Casey', 'Morgan'];
+            const botResponses = [
+                "Hey there! How's it going?",
+                "That's interesting, tell me more!",
+                "I totally agree with you on that.",
+                "Has anyone tried the new feature?",
+                "Great point! I hadn't thought of that.",
+                "What do you think about the latest update?",
+                "I'm learning so much from this chat!",
+                "Does anyone have recommendations for good resources?",
+                "Thanks for sharing that information!",
+                "I'll have to look into that more."
+            ];
+            
+            simulatedUserInterval = setInterval(() => {
+                // Only send messages if chat is active and random chance
+                if (!chatContainer.classList.contains('hidden') && Math.random() < 0.02) {
+                    const randomUser = botUsers[Math.floor(Math.random() * botUsers.length)];
+                    const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)];
+                    
+                    // Don't send as current user
+                    if (randomUser !== currentUser) {
+                        // Create simulated message
+                        const message = {
+                            id: Date.now(),
+                            user: randomUser,
+                            text: randomResponse,
+                            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                            type: 'received'
+                        };
+                        
+                        // Add typing indicator first
+                        showTypingIndicator(randomUser);
+                        
+                        // Show message after delay
+                        setTimeout(() => {
+                            removeTypingIndicator();
+                            addMessageToUI(message);
+                            saveMessage(message);
+                        }, 1500 + Math.random() * 2000);
+                    }
+                }
+            }, 5000);
+        }
+        
+        // Simulate a response to user message
+        function simulateResponse(userMessage) {
+            // Only respond sometimes
+            if (Math.random() < 0.4) {
+                const botUsers = ['Alex', 'Jordan', 'Taylor'];
+                const randomUser = botUsers[Math.floor(Math.random() * botUsers.length)];
+                
+                // Generate response based on user message
+                let response = "";
+                const lowerMsg = userMessage.toLowerCase();
+                
+                if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
+                    response = `Hi ${currentUser}! Nice to see you in the chat.`;
+                } else if (lowerMsg.includes('how are you')) {
+                    response = "I'm doing well, thanks for asking! How about you?";
+                } else if (lowerMsg.includes('?')) {
+                    response = "That's a good question. I think it depends on the situation.";
+                } else if (lowerMsg.includes('thank')) {
+                    response = "You're welcome!";
+                } else {
+                    const responses = [
+                        "Interesting point!",
+                        "I see what you mean.",
+                        "Thanks for sharing that.",
+                        "That makes sense.",
+                        "I hadn't thought of it that way."
+                    ];
+                    response = responses[Math.floor(Math.random() * responses.length)];
+                }
+                
+                // Show typing indicator
+                showTypingIndicator(randomUser);
+                
+                // Send response after delay
+                setTimeout(() => {
+                    removeTypingIndicator();
+                    
+                    const message = {
+                        id: Date.now(),
+                        user: randomUser,
+                        text: response,
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                        type: 'received'
+                    };
+                    
+                    addMessageToUI(message);
+                    saveMessage(message);
+                }, 1000 + Math.random() * 1500);
+            }
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator(user) {
+            removeTypingIndicator();
+            
+            const typingElement = document.createElement('div');
+            typingElement.className = 'typing-indicator';
+            typingElement.id = 'typing-indicator';
+            
+            typingElement.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <span style="margin-left: 10px; font-size: 0.8rem;">${escapeHtml(user)} is typing...</span>
+            `;
+            
+            chatBody.appendChild(typingElement);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+        
+        // Remove typing indicator
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Initialize the app when page loads
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
