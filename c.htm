@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>P2P Secure Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  background:#121212;
+  color:#fff;
+  font-family: Arial;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  margin:0;
+}
+#box {
+  width:100%;
+  max-width:420px;
+  background:#1e1e1e;
+  padding:15px;
+  border-radius:10px;
+}
+input,button {
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border:none;
+  border-radius:6px;
+}
+input { background:#2a2a2a; color:#fff; }
+button { background:#03dac6; font-weight:bold; }
+#chat { display:none; }
+#msgs {
+  height:280px;
+  overflow:auto;
+  background:#111;
+  padding:8px;
+  border-radius:6px;
+}
+.msg { margin-bottom:6px; }
+</style>
+</head>
+
+<body>
+<div id="box">
+
+<div id="join">
+  <input id="name" placeholder="Your name">
+  <input id="room" placeholder="Room name">
+  <input id="pass" type="password" placeholder="Room password">
+  <button onclick="start()">Join / Create</button>
+</div>
+
+<div id="chat">
+  <div id="msgs"></div>
+  <input id="text" placeholder="Message">
+  <button onclick="send()">Send</button>
+  <button onclick="copy()">Copy Chat Link</button>
+</div>
+
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<script>
+let peer, conn;
+let username, roomId, password;
+
+const params = new URLSearchParams(location.search);
+if (params.get("room")) {
+  document.getElementById("room").value = params.get("room");
+}
+
+function start() {
+  username = name.value.trim();
+  roomId = room.value.trim();
+  password = pass.value;
+
+  if (!username || !roomId || !password) {
+    alert("Fill all fields");
+    return;
+  }
+
+  peer = new Peer(roomId, { debug: 1 });
+
+  peer.on("open", id => {
+    showChat();
+  });
+
+  peer.on("connection", c => {
+    conn = c;
+    conn.on("data", receive);
+  });
+
+  if (params.get("join") === "1") {
+    peer.on("open", () => {
+      conn = peer.connect(roomId);
+      conn.on("data", receive);
+      conn.on("open", () => {
+        conn.send({ type:"auth", pass: password, user: username });
+      });
+    });
+  }
+}
+
+function receive(data) {
+  if (data.type === "auth") {
+    if (data.pass !== password) {
+      alert("Wrong password");
+      conn.close();
+      return;
+    }
+    add("System", data.user + " joined");
+  }
+
+  if (data.type === "msg") {
+    add(data.user, data.text);
+  }
+}
+
+function send() {
+  const t = text.value;
+  if (!t || !conn) return;
+
+  conn.send({ type:"msg", user:username, text:t });
+  add("Me", t);
+  text.value = "";
+}
+
+function add(u, t) {
+  msgs.innerHTML += `<div class="msg"><b>${u}:</b> ${t}</div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showChat() {
+  join.style.display = "none";
+  chat.style.display = "block";
+}
+
+function copy() {
+  const link = location.origin + location.pathname +
+    "?room=" + roomId + "&join=1";
+  navigator.clipboard.writeText(link);
+  alert("Chat link copied");
+}
+</script>
+
+</body>
+</html>
